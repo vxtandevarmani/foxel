@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+	"libvm",
+	"misc"
+]
+
+[profile.dev]
+strip = true
+opt-level = 's'
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
