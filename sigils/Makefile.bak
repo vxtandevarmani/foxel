@@ -1,0 +1,47 @@
+NAME   := sigils
+
+CCX64  := clang
+
+
+#CFLAGS := --target=riscv64-unknown-elf -march=rv64im -mcmodel=medany -fuse-ld=lld -flto
+CFLAGS := --target=x86_64-w64-mingw32 -mno-sse -masm=intel -Wl,--no-seh,--enable-stdcall-fixup
+
+
+CFLAGS += -Os -nostdlib -fno-asynchronous-unwind-tables -std=c++20 
+CFLAGS += -fno-ident -fpack-struct=8 -falign-functions=1 -s -w
+CFLAGS += -ffunction-sections -falign-jumps=1 -falign-labels=1
+CFLAGS += -Wl,-s, -fno-exceptions -fno-builtin
+CFLAGS += -fms-extensions -fPIC -Iinclude -Wl,-T,scripts/linker.ld
+
+
+SRC    := $(wildcard src/*.cpp)
+OBJ64  := $(SRC:%.cpp=%.x64.obj)
+
+release: x64 x86
+debug: 	 x64-debug x86-debug
+
+x64-debug: CFLAGS += -D DEBUG
+x64-debug: x64
+
+x64: $(OBJ64)
+	@ echo "compiling x64 project"
+	@ $(CCX64) bin/obj/*.x64.obj -o bin/$(NAME).x64.exe $(CFLAGS)
+#@ llvm-objcopy -O binary bin/$(NAME).x64.exe bin/$(NAME).x64.bin
+
+	@ llvm-objcopy --dump-section .text=bin/$(NAME).x64.bin bin/$(NAME).x64.exe
+#	@ rm bin/$(NAME).x64.exe
+
+%.x64.obj: %.cpp
+	@ echo "-> compiling $< to $(notdir $@)"
+	@ $(CCX64) -o bin/obj/$(notdir $@) -c $< $(CFLAGS)
+
+
+stomper:
+	@ $(CCX64) test/stomper.cpp -o test/stomper.x64.exe -w
+
+clean:
+	@ rm -f bin/obj/*.x64.obj
+	@ rm -f bin/obj/*.x86.obj
+	@ rm -f bin/*.exe
+	@ rm -f bin/*.bin
+	@ echo "removed object files"
